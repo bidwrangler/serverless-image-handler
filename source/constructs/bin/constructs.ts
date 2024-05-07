@@ -10,7 +10,10 @@ let synthesizer = new DefaultStackSynthesizer({
 });
 
 // Solutions pipeline deployment
-const { DIST_OUTPUT_BUCKET, SOLUTION_NAME, VERSION } = process.env;
+const { DIST_OUTPUT_BUCKET, SOLUTION_NAME, VERSION, STACK_NAME } = process.env;
+if (!STACK_NAME) {
+  throw new Error("STACK_NAME env variable has to be set!")
+}
 if (DIST_OUTPUT_BUCKET && SOLUTION_NAME && VERSION)
   synthesizer = new DefaultStackSynthesizer({
     generateBootstrapVersionRule: false,
@@ -22,7 +25,7 @@ const app = new App();
 const solutionDisplayName = "Serverless Image Handler";
 const description = `(${app.node.tryGetContext("solutionId")}) - ${solutionDisplayName}. Version ${VERSION ?? app.node.tryGetContext("solutionVersion")}`;
 // eslint-disable-next-line no-new
-new ServerlessImageHandlerStack(app, "ServerlessImageHandlerStack", {
+new ServerlessImageHandlerStack(app, STACK_NAME, {
   synthesizer: synthesizer,
   description: description,
   solutionId: app.node.tryGetContext("solutionId"),

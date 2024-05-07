@@ -70,15 +70,18 @@ Test Suites: 1 failed, 32 passed, 33 total
 Tests:       7 failed, 277 passed, 284 total
 ```
 
-### 3. Build and Deploy
+### 3. Build and Deploy (updated by BW)
+
+NOTES:
+1. --stack_name is the name of the stack to be created or updated
+2. --source_buckets is S3 buckets that should be served by that image handler
+3. --profile param is optional, AWS credentials will be picked up from env vars if omitted
+
 ```bash
-cd $MAIN_DIRECTORY/source/constructs
-npm run clean:install
-overrideWarningsEnabled=false npx cdk bootstrap --profile <PROFILE_NAME>
-overrideWarningsEnabled=false npx cdk deploy\
- --parameters DeployDemoUIParameter=Yes\
-  --parameters SourceBucketsParameter=<MY_BUCKET>\
-   --profile <PROFILE_NAME>
+# 1. Build assets:
+./bw_build.sh --stack_name BW-Serverless-Image-Handler--staging --profile bw
+# 2. Deploy/update stack:
+./bw_deploy.sh --stack_name BW-Serverless-Image-Handler--staging --source_buckets bwpaperclip-bwlevelstaging,bwpaperclip-bwstaging --profile bw
 ```
 
 _Note:_
