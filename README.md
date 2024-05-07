@@ -64,6 +64,12 @@ cd $MAIN_DIRECTORY/deployment
 chmod +x run-unit-tests.sh && ./run-unit-tests.sh
 ```
 
+BW NOTE: we did not update tests after adding support to EFS (checked that before that all passed), the current results of running tests are:
+```bash
+Test Suites: 1 failed, 32 passed, 33 total
+Tests:       7 failed, 277 passed, 284 total
+```
+
 ### 3. Build and Deploy
 ```bash
 cd $MAIN_DIRECTORY/source/constructs

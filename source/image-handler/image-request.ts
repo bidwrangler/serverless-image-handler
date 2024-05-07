@@ -1,6 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import fsPromises from 'fs/promises';
+import fs from 'fs';
 import S3 from "aws-sdk/clients/s3";
 import { createHmac } from "crypto";
 
@@ -102,9 +104,10 @@ export class ImageRequest {
       imageRequestInfo.requestType = this.parseRequestType(event);
       imageRequestInfo.bucket = this.parseImageBucket(event, imageRequestInfo.requestType);
       imageRequestInfo.key = this.parseImageKey(event, imageRequestInfo.requestType);
+      imageRequestInfo.useEfs = this.parseImageUseEfs(event, imageRequestInfo.requestType);
       imageRequestInfo.edits = this.parseImageEdits(event, imageRequestInfo.requestType);
 
-      const originalImage = await this.getOriginalImage(imageRequestInfo.bucket, imageRequestInfo.key);
+      const originalImage = await this.getOriginalImage(imageRequestInfo.bucket, imageRequestInfo.key, imageRequestInfo.useEfs);
       imageRequestInfo = { ...imageRequestInfo, ...originalImage };
 
       imageRequestInfo.headers = this.parseImageHeaders(event, imageRequestInfo.requestType);
@@ -147,15 +150,34 @@ export class ImageRequest {
    * Gets the original image from an Amazon S3 bucket.
    * @param bucket The name of the bucket containing the image.
    * @param key The key name corresponding to the image.
+   * @param useEfs Should it get image from EFS or from S3 bucket.
    * @returns The original image or an error.
    */
-  public async getOriginalImage(bucket: string, key: string): Promise<OriginalImageInfo> {
+  public async getOriginalImage(bucket: string, key: string, useEfs: boolean = false): Promise<OriginalImageInfo> {
     try {
       const result: OriginalImageInfo = {};
 
-      const imageLocation = { Bucket: bucket, Key: key };
-      const originalImage = await this.s3Client.getObject(imageLocation).promise();
-      const imageBuffer = Buffer.from(originalImage.Body as Uint8Array);
+      // BW_CHANGE: get image from EFS if requested so
+      let originalImage: any = {}
+      let imageBuffer
+      if (useEfs) {
+        const filePath = `/mnt/bw_images/${key}`
+        try {
+          imageBuffer = await fsPromises.readFile(filePath)
+        } catch (err) {
+          if (!fs.existsSync(filePath)) {
+            const notFoundError: any = new Error('File not found')
+            notFoundError.code = 'NoSuchKey'
+            throw notFoundError
+          } else {
+            throw err
+          }
+        }
+      } else {
+        const imageLocation = { Bucket: bucket, Key: key };
+        originalImage = await this.s3Client.getObject(imageLocation).promise();
+        imageBuffer = Buffer.from(originalImage.Body as Uint8Array);
+      }
 
       if (originalImage.ContentType) {
         // If using default S3 ContentType infer from hex headers
@@ -229,6 +251,26 @@ export class ImageRequest {
         StatusCodes.NOT_FOUND,
         "ImageBucket::CannotFindBucket",
         "The bucket you specified could not be found. Please check the spelling of the bucket name in your request."
+      );
+    }
+  }
+
+  /**
+   * Parses if we should use EFS storage or S3 storage
+   * @param event Lambda request body.
+   * @param requestType Image handler request type.
+   * @returns boolean.
+   */
+  public parseImageUseEfs(event: ImageHandlerEvent, requestType: RequestTypes): boolean {
+    if (requestType === RequestTypes.DEFAULT) {
+      return this.decodeRequest(event).use_efs;
+    } else if (requestType === RequestTypes.THUMBOR || requestType === RequestTypes.CUSTOM) {
+      return false
+    } else {
+      throw new ImageHandlerError(
+          StatusCodes.NOT_FOUND,
+          'ImageBucket::CannotFindUseEfs',
+          'Request type not supported.'
       );
     }
   }

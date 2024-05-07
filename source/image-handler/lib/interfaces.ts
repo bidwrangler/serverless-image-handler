@@ -20,6 +20,7 @@ export interface ImageHandlerEvent {
 export interface DefaultImageRequest {
   bucket?: string;
   key: string;
+  use_efs: boolean;
   edits?: ImageEdits;
   outputFormat?: ImageFormatTypes;
   effort?: number;
@@ -42,6 +43,7 @@ export interface ImageRequestInfo {
   requestType: RequestTypes;
   bucket: string;
   key: string;
+  useEfs?: boolean;
   edits?: ImageEdits;
   originalImage: Buffer;
   headers?: Headers;

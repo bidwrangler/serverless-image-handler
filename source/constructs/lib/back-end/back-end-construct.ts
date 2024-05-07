@@ -52,6 +52,11 @@ export class BackEnd extends Construct {
 
     const imageHandlerLambdaFunctionRolePolicy = new Policy(this, "ImageHandlerFunctionPolicy", {
       statements: [
+        // BW_CHANGE: added ec2 permissions to be able to add VPC network to connect to EFS
+        new PolicyStatement({
+          actions: ['ec2:DescribeNetworkInterfaces', 'ec2:CreateNetworkInterface', 'ec2:DeleteNetworkInterface', 'ec2:DescribeInstances', 'ec2:AttachNetworkInterface'],
+          resources: ['*']
+        }),
         new PolicyStatement({
           actions: ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
           resources: [
