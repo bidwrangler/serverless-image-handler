@@ -84,10 +84,6 @@ NOTES:
 ./bw_deploy.sh --stack_name BW-Serverless-Image-Handler--staging --source_buckets bwpaperclip-bwlevelstaging,bwpaperclip-bwstaging --profile bw
 ```
 
-_Note:_
-- **MY_BUCKET**: name of an existing bucket in your account
-- **PROFILE_NAME**: name of an AWS CLI profile that has appropriate credentials for deploying in your preferred region
-
 # Collection of operational metrics
 
 This solution collects anonymous operational metrics to help AWS improve the quality and features of the solution. For more information, including how to disable this capability, please see the [implementation guide](https://docs.aws.amazon.com/solutions/latest/serverless-image-handler/op-metrics.html).
